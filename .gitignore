@@ -18,14 +18,6 @@ venv.bak/
 *.swo
 *~
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
 # Logs
 *.log
@@ -102,15 +94,6 @@ public
 tmp/
 temp/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # Firebase
 .firebase/
@@ -118,9 +101,15 @@ firebase-debug.log
 firestore-debug.log
 backend/privatekey.json
 
-# ML Models (if large)
+# ML Models and Data Files
 *.pkl
 *.joblib
+*.h5
+*.hdf5
+*.model
+*.weights
+*.bin
+*.safetensors
 
 # Test artifacts
 .pytest_cache/
@@ -128,6 +117,9 @@ backend/privatekey.json
 htmlcov/
 .tox/
 .nox/
+test-results/
+playwright-report/
+test-results.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -152,14 +144,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -189,5 +173,50 @@ cython_debug/
 build/
 dist/
 *.egg-info/
+
+# Development and Documentation
 CODE_QUALITY_CHECKLIST.md
 .cursorignore
+
+# Vite specific
+dist-ssr/
+*.local
+
+# Package manager locks (keep one, ignore others)
+# Keep package-lock.json, ignore others
+yarn.lock
+pnpm-lock.yaml
+
+# IDE and Editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.code-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
