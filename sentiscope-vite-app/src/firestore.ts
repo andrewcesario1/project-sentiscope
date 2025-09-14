@@ -11,7 +11,6 @@ interface UserData {
 const addUserData = async (userData: UserData): Promise<void> =>{
     try{
         const docRef = await addDoc(collection(db, "users"), userData);
-        console.log("User successfully added with ID:", docRef.id);
 
     } catch(error) {
         console.error("Error adding new user:", error)

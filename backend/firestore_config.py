@@ -21,5 +21,3 @@ db = firestore.client(app=app)
 # Get Firestore auth client
 auth = auth.Client(app=app)
 
-
-print("Firebase initialized successfully!")

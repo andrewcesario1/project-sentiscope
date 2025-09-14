@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -29,15 +28,13 @@ function App() {
   return (
     <div className="app">
       <Navbar user={user} />
-      <div className="content">
-        <Routes>
-          <Route path="/" element={user ? <Navigate to="/home" replace /> : <GuestPage />} />
-          <Route path="/signup" element={user ? <Navigate to="/home" replace /> : <SignUpPage/>} />
-          <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" replace />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/" replace />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/home" replace /> : <GuestPage />} />
+        <Route path="/signup" element={user ? <Navigate to="/home" replace /> : <SignUpPage/>} />
+        <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" replace />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }

@@ -1,11 +1,9 @@
-// src/pages/SignUpPage.tsx
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { signInWithCustomToken, onAuthStateChanged} from "firebase/auth";
 
-const API_BASE = "https://project-sentiscope.onrender.com";
+const API_BASE = "http://localhost:5000";
 
 
 const SignUpPage = () => {
@@ -13,21 +11,20 @@ const SignUpPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null); 
-    const [successMessage, setSuccessMessage] = useState<string | null>(null); // New state for success message
-    const [isLoading, setIsLoading] = useState(false); // Loading state
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate  = useNavigate();
-    const plan = "free"; // Default plan
+    const plan = "free";
 
 
     const handleSubmit = async (e:React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (isLoading) return; // Prevent multiple submissions
-        setIsLoading(true); // Start loading
+        if (isLoading) return;
+        setIsLoading(true);
         setError(null)
-        setSuccessMessage(null); // Reset success message on new submission
+        setSuccessMessage(null);
 
         try{
-            //Send data to your Flask backend
             const response = await fetch(`${API_BASE}/signup`, {
                 method: 'POST',
                 headers: {
@@ -39,40 +36,36 @@ const SignUpPage = () => {
             const data = await response.json();
 
             if(response.ok){
-              setSuccessMessage("Account created successfully!"); // Set success message
+              setSuccessMessage("Account created successfully!");
               setName("");
               setEmail("");
               setPassword("");
 
-              // Sign in with Firebase using custom token generated from the backend
               const { custom_token } = data;
               await signInWithCustomToken(auth, custom_token);
 
-              setTimeout(() => { navigate("/home", { replace: true }); }, 3000); // Redirect to home page with 3 sec delay
-              // Navigation is handled by useEffect
+              setTimeout(() => { navigate("/home", { replace: true }); }, 3000);
             } else {
                 setError(data.error || "Failed to sign up. Please try again.");
-                setIsLoading(false); // Stop loading
+                setIsLoading(false);
             }
 
         } catch (error) {
             setError("Sign up failed. Please try again.");
             console.error("Sign up error:", error);
-            setIsLoading(false); // Stop loading
+            setIsLoading(false);
         }
     };
 
 
-        // Handle auth state for other scenarios
         useEffect(() => {
           const unsubscribe = onAuthStateChanged(auth, (user) => {
             console.log("Auth state changed:", user ? user.uid : "No user");
             if (user && !successMessage) {
-    
-              navigate("/home", { replace: true }); // Redirect to home page if user is authenticated
+              navigate("/home", { replace: true });
           }
       });
-      return () => unsubscribe(); // Cleanup subscription on unmount
+      return () => unsubscribe();
       }, [navigate, successMessage]);
 
 
@@ -80,7 +73,7 @@ return (
     <div className="signup-page">
       <h2>Sign Up</h2>
       {error && <p className="error">{error}</p>}
-      {successMessage && <p className="success">{successMessage}</p>} {/* Display success message */}
+      {successMessage && <p className="success">{successMessage}</p>}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Add your name: </label>
@@ -95,7 +88,8 @@ return (
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password..."  required disabled={isLoading}/>
         </div>
         <button type="submit">
-          {isLoading ? "Signing Up..." : "Sign Up"}</button>
+          {isLoading ? "Signing Up..." : "Sign Up"}
+        </button>
       </form>
     </div>
   );

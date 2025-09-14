@@ -1,9 +1,8 @@
-// src/pages/GuestHomePage.tsx
 import React, { useState } from "react";
 import { auth } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Navigate, Link} from "react-router-dom";
-const API_BASE = "https://project-sentiscope.onrender.com";
+const API_BASE = "http://localhost:5000";
 
 
 interface Post {
@@ -30,7 +29,6 @@ const formatDate = (ts: number) =>
 
 const GuestHomePage: React.FC = () => {
   const [user] = useAuthState(auth);
-  // only signed-out users see this page
   if (user) return <Navigate to="/home" replace />;
 
   const [keyword, setKeyword] = useState("");
@@ -63,63 +61,53 @@ const GuestHomePage: React.FC = () => {
       let fetchedPosts: Post[] = [];
 
       if (timeFilter === "all") {
-        // 1) Model prediction on the keyword
-        {
-          const mdlRes = await fetch(`${API_BASE}/predict`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ texts: [keyword] }),
-          });
-          if (!mdlRes.ok) throw new Error("Model prediction failed");
-          mdlData = await mdlRes.json();
-        }
-        // 2) Fetch latest 15 Reddit posts for display
-        {
-          const rRes = await fetch(
-              `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
-            );
-          if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
-          const rd = await rRes.json();
-          fetchedPosts = Object.entries(rd.posts || {}).flatMap(
-            ([sub, arr]) =>
-              Array.isArray(arr)
-                ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
-                : []
+        const mdlRes = await fetch(`http://localhost:5001/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texts: [keyword] }),
+        });
+        if (!mdlRes.ok) throw new Error("Model prediction failed");
+        mdlData = await mdlRes.json();
+
+        const rRes = await fetch(
+            `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
           );
-        }
+        if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
+        const rd = await rRes.json();
+        fetchedPosts = Object.entries(rd.posts || {}).flatMap(
+          ([sub, arr]) =>
+            Array.isArray(arr)
+              ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
+              : []
+        );
       } else {
-        // 2) Fetch filtered 15 posts
-        {
-            const rRes = await fetch(
-                `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
-              );
-          if (!rRes.ok)
-            throw new Error("Failed to fetch filtered Reddit posts");
-          const rd = await rRes.json();
-          fetchedPosts = Object.entries(rd.posts || {}).flatMap(
-            ([sub, arr]) =>
-              Array.isArray(arr)
-                ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
-                : []
+        const rRes = await fetch(
+            `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
           );
-        }
-        // 1) Model prediction on fetched posts
-        {
-          // const texts = fetchedPosts.map((p) => p.text || p.title);
-          const mdlRes = await fetch(`${API_BASE}/predict`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ texts: [keyword] }),
-          });
-          if (!mdlRes.ok) throw new Error("Model prediction failed");
-          mdlData = await mdlRes.json();
-        }
+        if (!rRes.ok)
+          throw new Error("Failed to fetch filtered Reddit posts");
+        const rd = await rRes.json();
+        fetchedPosts = Object.entries(rd.posts || {}).flatMap(
+          ([sub, arr]) =>
+            Array.isArray(arr)
+              ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
+              : []
+        );
+
+        const mdlRes = await fetch(`http://localhost:5001/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texts: [keyword] }),
+        });
+        if (!mdlRes.ok) throw new Error("Model prediction failed");
+        mdlData = await mdlRes.json();
       }
 
       setSentiment(mdlData);
       setPosts(fetchedPosts);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -127,63 +115,68 @@ const GuestHomePage: React.FC = () => {
 
   return (
     <div className="home-page">
-      <h2>Welcome to Sentiscope</h2>
-      <p>
-        You have limited access as a guest. Please{" "}
-        <Link to="/signup" style={{ color: "#007bff", textDecoration: "underline" }}>
-        sign up
-        </Link>{" "}
-        to unlock full features.
-      </p>
+      <div className="search-hero">
+        <div className="search-card">
+          <h2>Welcome to Sentiscope</h2>
+          <p>
+            You have limited access as a guest. Please{" "}
+            <Link to="/signup" className="signup-link">
+            sign up
+            </Link>{" "}
+            to unlock full features.
+          </p>
 
-      {/* Search bar + Analyze */}
-      <div className="search-form" style={{ display: "flex", gap: 8 }}>
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Enter keyword or phrase"
-          className="search-input"
-        />
-        <button
-          onClick={handleAnalyze}
-          className="search-button"
-          disabled={loading || !keyword.trim()}
-        >
-          {loading ? "Analyzing…" : "Analyze"}
-        </button>
-      </div>
-
-      {/* Filter dropdown */}
-      <div className="filter-dropdown">
-        <button
-          className="filter-button dropdown-toggle"
-          onClick={() => setFilterOpen((o) => !o)}
-        >
-          {timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}
-          <span className="dropdown-arrow">{filterOpen ? "▲" : "▼"}</span>
-        </button>
-        {filterOpen && (
-          <div className="filter-menu">
-            {["all", "day", "week", "month", "year"].map((opt) => (
-              <div
-                key={opt}
-                className={`filter-menu-item ${
-                  timeFilter === opt ? "active" : ""
-                }`}
-                onClick={() => {
-                  setTimeFilter(opt as any);
-                  setFilterOpen(false);
-                }}
-              >
-                {opt.charAt(0).toUpperCase() + opt.slice(1)}
-              </div>
-            ))}
+          {/* Search bar + Analyze */}
+          <div className="search-form">
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Enter keyword or phrase"
+              className="search-input"
+            />
+            <button
+              onClick={handleAnalyze}
+              className="search-button"
+              disabled={loading || !keyword.trim()}
+            >
+              {loading ? "Analyzing…" : "Analyze"}
+            </button>
           </div>
-        )}
+
+          {/* Filter dropdown */}
+          <div className="filter-container">
+            <div className="filter-dropdown">
+              <button
+                className="filter-button"
+                onClick={() => setFilterOpen((o) => !o)}
+              >
+                Filter: {timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}
+                <span className="dropdown-arrow">{filterOpen ? "▲" : "▼"}</span>
+              </button>
+              {filterOpen && (
+                <div className="filter-menu">
+                  {["all", "day", "week", "month", "year"].map((opt) => (
+                    <div
+                      key={opt}
+                      className={`filter-menu-item ${
+                        timeFilter === opt ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        setTimeFilter(opt as any);
+                        setFilterOpen(false);
+                      }}
+                    >
+                      {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Instructions */}
       {showInstructions && (
         <div className="instructions">
           <h2>Instructions:</h2>
@@ -196,8 +189,6 @@ const GuestHomePage: React.FC = () => {
       )}
 
       {error && <p className="error">{error}</p>}
-
-      {/* Tabs */}
       {(sentiment || posts.length > 0) && (
         <>
           <div className="home-tabs" style={{ marginTop: 20 }}>

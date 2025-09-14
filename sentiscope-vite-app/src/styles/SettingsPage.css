@@ -1,0 +1,217 @@
+
+.settings-page {
+  position: relative;
+  min-height: 100vh;
+  padding: 8rem 2rem 4rem;
+  background-color: transparent;
+  width: 100%;
+}
+
+.settings-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 15% 85%, rgba(120, 119, 198, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(255, 119, 198, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(120, 219, 255, 0.15) 0%, transparent 50%);
+  background-attachment: fixed;
+  z-index: -1;
+}
+
+.settings-content {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.settings-content h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-color-light);
+  margin: 0 0 3rem 0;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.settings-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.sidebar-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-align: left;
+}
+.sidebar-btn:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: var(--text-color);
+}
+.sidebar-btn.active {
+  background-color: var(--card-background);
+  color: var(--primary-color);
+  font-weight: 600;
+  box-shadow: var(--shadow-subtle);
+}
+
+.settings-panel {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  padding: 2.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.settings-form h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color-light);
+  margin: 0 0 2rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-form .form-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.settings-form .form-group:last-child {
+  border-bottom: none;
+}
+.settings-form .form-group.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.settings-form label {
+  font-weight: 500;
+  color: var(--text-color);
+  flex-shrink: 0;
+}
+.settings-form span {
+  color: var(--text-color-secondary);
+  font-weight: 400;
+  text-align: right;
+}
+.settings-form input {
+  border: 1px solid var(--border-color);
+  background-color: var(--background-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+}
+.settings-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.settings-button {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-top: 1.5rem;
+  display: inline-block;
+}
+.settings-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.settings-button.logout {
+  background: #ef4444;
+}
+.settings-button.logout:hover {
+  background: #d70015;
+}
+
+.recent-searches {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: #fdfdff;
+  width: 100%;
+}
+
+.search-item {
+  padding: 0.25rem 0;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+}
+
+.load-more-btn {
+  background: none !important;
+  color: var(--primary-color) !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  margin-top: 1rem !important;
+  border: 1px solid var(--border-color);
+}
+
+.error-text {
+  color: var(--error-color);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  width: 100%;
+  font-weight: 400;
+  text-align: left;
+}
+.success-text {
+  color: var(--success-color);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  width: 100%;
+  font-weight: 400;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    flex-direction: column;
+  }
+  .settings-sidebar {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .sidebar-btn {
+    flex-shrink: 0;
+  }
+}

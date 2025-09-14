@@ -1,4 +1,3 @@
-// src/pages/SettingsPage.tsx
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import {
@@ -8,6 +7,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import "../styles/SettingsPage.css";
 
 interface UserData {
   name: string;
@@ -21,8 +21,10 @@ interface UsageData {
   recent: string[];
 }
 
+type SettingsTab = 'account' | 'security' | 'usage';
+
 const SettingsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'usage'>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('account');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [usageData, setUsageData] = useState<UsageData>({
     visits: 0,
@@ -31,78 +33,57 @@ const SettingsPage: React.FC = () => {
   });
   const [showCount, setShowCount] = useState(10);
   const [loading, setLoading] = useState(true);
-
-  // Password change state
-  const [showChangePw, setShowChangePw] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
     const fetchUserAndUsage = async () => {
+      setLoading(true);
       const u = auth.currentUser;
       if (u) {
-        // fetch profile
         try {
           const userRef = doc(db, 'users', u.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const d = userSnap.data() as any;
-            setUserData({
-              name: d.name,
-              email: u.email || d.email,
-              plan: d.plan
-            });
-          } else {
-            setUserData({ name: '', email: u.email || '', plan: 'free' });
-          }
-        } catch (err) {
-          console.warn('Could not read user profile', err);
-          setUserData({ name: '', email: u.email || '', plan: 'free' });
-        }
-
-        // fetch usage
-        try {
-          const usageRef = doc(db, 'users', u.uid);
-          const usageSnap = await getDoc(usageRef);
-          if (usageSnap.exists()) {
-            const d = usageSnap.data() as any;
+            setUserData({ name: d.name, email: u.email || d.email, plan: d.plan });
             setUsageData({
               visits: d.visits || 0,
               sentiments: d.sentiments || 0,
               recent: Array.isArray(d.recent) ? d.recent : []
             });
+          } else {
+            setUserData({ name: '', email: u.email || '', plan: 'free' });
           }
         } catch (err) {
-          console.warn('Could not read usage data', err);
+          setUserData({ name: '', email: u.email || '', plan: 'free' });
         }
       }
       setLoading(false);
     };
-
     fetchUserAndUsage();
   }, []);
 
   const handleChangePassword = async () => {
     setPasswordError('');
+    setPasswordSuccess('');
     if (!auth.currentUser) return;
     if (!oldPassword || !newPassword) {
       setPasswordError('Both fields are required.');
       return;
     }
     try {
-      const credential = EmailAuthProvider.credential(
-        auth.currentUser.email || '',
-        oldPassword
-      );
+      const credential = EmailAuthProvider.credential(auth.currentUser.email || '', oldPassword);
       await reauthenticateWithCredential(auth.currentUser, credential);
       await updatePassword(auth.currentUser, newPassword);
-      alert('Password changed successfully!');
-      setShowChangePw(false);
+      setPasswordSuccess('Password changed successfully!');
       setOldPassword('');
       setNewPassword('');
-    } catch (err: any) {
-      setPasswordError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Password change failed";
+      setPasswordError(errorMessage);
     }
   };
 
@@ -111,89 +92,51 @@ const SettingsPage: React.FC = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="loading-container">Loading...</div>;
   }
 
-  return (
-    <div className="settings-page">
-      <h2>Settings</h2>
-
-      {/* Tabs */}
-      <div className="settings-tabs">
-        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>
-          Profile
-        </button>
-        <button className={activeTab === 'subscription' ? 'active' : ''} onClick={() => setActiveTab('subscription')}>
-          Subscription
-        </button>
-        <button className={activeTab === 'usage' ? 'active' : ''} onClick={() => setActiveTab('usage')}>
-          Usage
-        </button>
-      </div>
-
-      <div className="settings-content">
-        {/* Profile Tab */}
-        {activeTab === 'profile' && userData && (
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'account':
+        return (
           <div className="settings-form">
+            <h2>Account Information</h2>
             <div className="form-group">
               <label>Name:</label>
-              <span>{userData.name}</span>
+              <span>{userData?.name}</span>
             </div>
             <div className="form-group">
               <label>Email:</label>
-              <span>{userData.email}</span>
+              <span>{userData?.email}</span>
             </div>
-            <div className="form-group">
-              <label>Plan:</label>
-              <span>{userData.plan.toUpperCase()}</span>
-            </div>
-
-            <button onClick={() => setShowChangePw(prev => !prev)}>
-              {showChangePw ? 'Cancel' : 'Change Password'}
-            </button>
-            {showChangePw && (
-              <div className="settings-form" style={{ marginTop: '1rem' }}>
-                <div className="form-group">
-                  <label>Old Password:</label>
-                  <input
-                    type="password"
-                    value={oldPassword}
-                    onChange={e => setOldPassword(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>New Password:</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                  />
-                </div>
-                {passwordError && <div className="error-text">{passwordError}</div>}
-                <button onClick={handleChangePassword}>Save</button>
-              </div>
-            )}
-
-            <button className="logout-btn" style={{ marginTop: '2rem' }} onClick={handleLogout}>
-              Log Out
-            </button>
-          </div>
-        )}
-
-        {/* Subscription Tab */}
-        {activeTab === 'subscription' && (
-          <div className="settings-form">
-            <div className="form-group">
+             <div className="form-group">
               <label>Current Plan:</label>
               <span>{userData?.plan.toUpperCase()}</span>
             </div>
-            <p style={{ marginTop: '1rem' }}>Subscriptions coming soon.</p>
+            <button className="settings-button logout" onClick={handleLogout}>Log Out</button>
           </div>
-        )}
-
-        {/* Usage Tab */}
-        {activeTab === 'usage' && (
+        );
+      case 'security':
+        return (
           <div className="settings-form">
+            <h2>Security</h2>
+            <div className="form-group">
+              <label>Old Password:</label>
+              <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Enter old password"/>
+            </div>
+            <div className="form-group">
+              <label>New Password:</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password"/>
+            </div>
+            {passwordError && <p className="error-text">{passwordError}</p>}
+            {passwordSuccess && <p className="success-text">{passwordSuccess}</p>}
+            <button className="settings-button" onClick={handleChangePassword}>Update Password</button>
+          </div>
+        );
+      case 'usage':
+        return (
+          <div className="settings-form">
+            <h2>Usage Data</h2>
             <div className="form-group">
               <label>Site Visits:</label>
               <span>{usageData.visits}</span>
@@ -202,34 +145,42 @@ const SettingsPage: React.FC = () => {
               <label>Sentiments Created:</label>
               <span>{usageData.sentiments}</span>
             </div>
-            <div className="form-group">
+            <div className="form-group vertical">
               <label>Recent Searches:</label>
-              <div
-                style={{
-                  maxHeight: 200,
-                  overflowY: 'auto',
-                  border: '1px solid #ccc',
-                  padding: '0.5rem',
-                  borderRadius: 4
-                }}
-              >
-                {usageData.recent.slice(0, showCount).map((item, idx) => (
-                  <div key={idx} style={{ marginBottom: '0.25rem' }}>
-                    {idx + 1}. {item}
-                  </div>
-                ))}
+              <div className="recent-searches">
+                {usageData.recent.length > 0 ? (
+                  usageData.recent.slice(0, showCount).map((item, idx) => (
+                    <div key={idx} className="search-item">{idx + 1}. {item}</div>
+                  ))
+                ) : (
+                  <p>No recent searches.</p>
+                )}
                 {usageData.recent.length > showCount && (
-                  <button
-                    onClick={() => setShowCount(count => count + 10)}
-                    style={{ marginTop: '0.5rem' }}
-                  >
+                  <button onClick={() => setShowCount(c => c + 10)} className="settings-button load-more-btn">
                     Load More
                   </button>
                 )}
               </div>
             </div>
           </div>
-        )}
+        );
+    }
+  };
+
+  return (
+    <div className="settings-page">
+      <div className="settings-content">
+        <h1>Settings</h1>
+        <div className="settings-layout">
+          <div className="settings-sidebar">
+            <button className={`sidebar-btn ${activeTab === 'account' ? 'active' : ''}`} onClick={() => setActiveTab('account')}>Account</button>
+            <button className={`sidebar-btn ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>Security</button>
+            <button className={`sidebar-btn ${activeTab === 'usage' ? 'active' : ''}`} onClick={() => setActiveTab('usage')}>Usage</button>
+          </div>
+          <div className="settings-panel">
+            {renderContent()}
+          </div>
+        </div>
       </div>
     </div>
   );

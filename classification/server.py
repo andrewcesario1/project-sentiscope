@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import pickle
 import numpy as np
 import re
@@ -23,101 +25,101 @@ model_path = os.path.join(os.path.dirname(__file__), "sentiscope.pkl")
 app = Flask(__name__)
 CORS(app)
 
-#with open("sentiscope.pkl", "rb") as model_file:
-#    LRmodel = pickle.load(model_file)
-#
-with open("vectoriser.pkl", "rb") as vec_file:
-    vectorizer = pickle.load(vec_file)
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["100 per hour", "20 per minute"]
+)
+limiter.init_app(app)
+
 with open(model_path, "rb") as model_file:
     LRmodel = pickle.load(model_file)
 
 with open(vectorizer_path, "rb") as vec_file:
     vectorizer = pickle.load(vec_file)
 
-#print(f"Vectorizer vocabulary size: {len(vectorizer.vocabulary_) if hasattr(vectorizer, 'vocabulary_') else 'Not fitted!'}")
-#print(f"Vectorizer has idf_: {hasattr(vectorizer, 'idf_')}")
 
 def clean_text(text):
+    """
+    Clean and preprocess text for sentiment analysis.
+    
+    Args:
+        text (str): Raw text to be cleaned
+        
+    Returns:
+        str: Cleaned and preprocessed text
+    """
     try:
+        if not isinstance(text, str):
+            return ""
+            
         text = text.lower()
-        text = re.sub(r'/[^\s]+', '', text)
-        text = re.sub(r'https?://[^\s]+', '', text)
-        text = re.sub(r'[0-9]+', '', text)
+        text = re.sub(r'/[^\s]+', '', text)  # Remove URLs
+        text = re.sub(r'https?://[^\s]+', '', text)  # Remove HTTP URLs
+        text = re.sub(r'[0-9]+', '', text)  # Remove numbers
         text = "".join([char for char in text if char not in string.punctuation])
+        
         stemmer = PorterStemmer()
         lemmatizer = WordNetLemmatizer()
         words = text.split()
         words = [word for word in words if word not in stop_word]
-        words = [lemmatizer.lemmatize(word) for word in text.split()]
+        words = [lemmatizer.lemmatize(word) for word in words]
         words = [stemmer.stem(word) for word in words]
         return " ".join(words).strip()
-    except Exception as e:
-        print(f"Error in clean_text: {e}")
+    except Exception:
         return ""
-    #return text
 
 @app.route("/predict", methods=["POST"])
+@limiter.limit("30 per minute")
 def predict():
+    """
+    Predict sentiment of provided texts using trained ML model.
+    
+    Expected JSON payload:
+    {
+        "texts": ["text1", "text2", ...]
+    }
+    
+    Returns:
+    {
+        "sentiment": "Positive" or "Negative",
+        "positive_percentage": float,
+        "negative_percentage": float
+    }
+    """
     try:
         data = request.get_json()
 
-        if not data or 'texts' not in data:
-            return jsonify({'error': 'No text provided'}), 400
-        #if not data or 'text' not in data:
-        #    return jsonify({'error': 'No text provided'}), 400
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        if 'texts' not in data:
+            return jsonify({'error': 'Texts array is required'}), 400
 
-        text = data['texts']
-        if not isinstance(text, list) or len(text) == 0:
-            return jsonify({'error': 'Invalid input format.'}), 400
+        texts = data['texts']
+        if not isinstance(texts, list) or len(texts) == 0:
+            return jsonify({'error': 'Texts must be a non-empty array'}), 400
 
-        #text = data['text']
-        #if not isinstance(text, str): 
-        #    return jsonify({'error': 'Invalid input format.'}), 400 
-
-        cleaned_text = [clean_text(item) for item in text if isinstance(item, str)]
-        cleaned_text = [item for item in cleaned_text if item]
-        vectorized_texts = vectorizer.transform(cleaned_text)
-        #predictions = LRmodel.predict(vectorized_texts)
-
-        predictions = LRmodel.predict_proba(vectorized_texts)
-
-        #cleaned_text = clean_text(text)
-        #vectorized_text = vectorizer.transform([cleaned_text])
-        #prediction = LRmodel.predict(vectorized_text)[0]
-
-        #sentiment = "Positive" if predictions == 1 else "Negative"
-        #confidence = LRmodel.predict_proba(vectorized_text)[0][prediction]
-        #probabilities = LRmodel.predict_proba(vectorized_texts)[0]
-        #positive_percentage = probabilities[1] * 100
-        #negative_percentage = probabilities[0] * 100
-
-        #total = len(predictions)
-        #positive_count = sum(predictions)
-        #negative_count = total - positive_count
+        # Clean and validate texts
+        cleaned_texts = []
+        for item in texts:
+            if isinstance(item, str) and item.strip():
+                cleaned = clean_text(item.strip())
+                if cleaned:
+                    cleaned_texts.append(cleaned)
         
+        if not cleaned_texts:
+            return jsonify({'error': 'No valid text found for analysis'}), 400
 
-        #positive_percentage = (positive_count / total ) * 100  
-        #negative_percentage = (negative_count / total) * 100 
+        # Limit to prevent resource exhaustion
+        if len(cleaned_texts) > 1000:
+            cleaned_texts = cleaned_texts[:1000]
 
+        vectorized_texts = vectorizer.transform(cleaned_texts)
+        predictions = LRmodel.predict_proba(vectorized_texts)
         
         positive_percentage = np.mean([prob[1] for prob in predictions]) * 100  
         negative_percentage = np.mean([prob[0] for prob in predictions]) * 100 
-
         sentiment = "Positive" if positive_percentage > negative_percentage else "Negative"
-
-
-        #sentiment = "Positive" if positive_percentage > negative_percentage else "Negative"
-        #return jsonify({
-        #    'total posts' : total,
-        #    'positive percentage' : round(positive_percentage, 2),
-        #    'negative percentage' : round(negative_percentage, 2)
-        #})
-
-        #return jsonify({
-        #    'sentiment': sentiment,
-        #    'confidence': round(confidence * 100, 2)
-        #})
-
 
         return jsonify({
             'sentiment': sentiment,
@@ -126,9 +128,7 @@ def predict():
         })
     
     except Exception as e:
-        print(f"Error in predict: {e}")
-        return jsonify({'error': 'An error occurred during prediction.'}), 500
+        return jsonify({'error': 'An error occurred during prediction'}), 500
 
 if __name__ == "__main__":
-
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=False)

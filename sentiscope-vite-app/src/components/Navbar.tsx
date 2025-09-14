@@ -1,11 +1,15 @@
-//src/components/Navbar.tsx
-import { useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, User } from "firebase/auth";
+import "../styles/Navbar.css";
+import Logo from "/Logo.png";
 
+interface NavbarProps {
+  user: User | null;
+}
 
-const Navbar = ({ user }: { user: any }) => {
+const Navbar: React.FC<NavbarProps> = ({ user }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -13,34 +17,25 @@ const Navbar = ({ user }: { user: any }) => {
   const [profileDropdown, setProfileDropdown] = useState(false);
   const navigate = useNavigate();
 
-  // Create refs for dropdown elements
   const authDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Clear credentials when dropdown closes
   useEffect(() => {
     if (!dropdownOpen) {
       setError(null);
     }
   }, [dropdownOpen]);
 
-  // Reset credentials when user changes
   useEffect(() => {
-    // Clear fields when user logs in
     if (user) {
       resetCredentials();
     }
   }, [user]);
-
-
-  // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Check if click is outside of auth dropdown
       if (authDropdownRef.current && !authDropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
-      // Check if click is outside of profile dropdown
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setProfileDropdown(false);
       }
@@ -58,33 +53,59 @@ const Navbar = ({ user }: { user: any }) => {
     setError(null);
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (): Promise<void> => {
     setError(null);
-    try {
+    
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password");
+      return;
+    }
 
+    try {
       await signInWithEmailAndPassword(auth, email, password);
-      resetCredentials(); // Clear credentials after successful sign-in
-    } catch (error) {
-      setError("No account found. Please sign up.");
-      console.log("Error signing in:", error);
+      resetCredentials();
+    } catch (error: unknown) {
+      let errorMessage = "Sign in failed. Please try again.";
+      
+      if (error && typeof error === 'object' && 'code' in error) {
+        const firebaseError = error as { code: string };
+        if (firebaseError.code === "auth/user-not-found") {
+          errorMessage = "No account found. Please sign up.";
+        } else if (firebaseError.code === "auth/wrong-password") {
+          errorMessage = "Incorrect password. Please try again.";
+        } else if (firebaseError.code === "auth/invalid-email") {
+          errorMessage = "Invalid email address.";
+        } else if (firebaseError.code === "auth/too-many-requests") {
+          errorMessage = "Too many failed attempts. Please try again later.";
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
-  const handleSignUp = async () => {
-      navigate("/signup");
-  }
+  const handleSignUp = (): void => {
+    navigate("/signup");
+  };
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    resetCredentials(); // Clear credentials after sign-out
-    navigate("/");
+  const handleSignOut = async (): Promise<void> => {
+    try {
+      await signOut(auth);
+      resetCredentials();
+      navigate("/");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
  
 
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">SENTISCOPE</Link>
+        <Link to="/" className="navbar-brand-link">
+          <img src={Logo} alt="Sentiscope Logo" className="navbar-logo" />
+          SENTISCOPE
+        </Link>
       </div>
       <div className="navbar-links">
         <Link to="/">Home</Link>
