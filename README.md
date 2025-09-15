@@ -2,7 +2,7 @@
 
 Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit posts to provide real-time sentiment insights, data visualization, and AI-generated summaries. Built with React, Flask, and machine learning models.
 
-**Note**: Hosting was discontinued due to cost. Project can be run locally with a .env file. **API keys are required and must be requested from the developer for approval.** See screenshots/demo below for expected functionality.
+**Note**: Hosting was discontinued due to cost. Project can be run locally with a .env file. **API keys are required and must be requested from the developer for approval.**
 
 ## Features
 
@@ -17,12 +17,11 @@ Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit p
 ## Tech Stack
 
 ### Frontend
-- **React 19** with TypeScript
+- **React 18** with TypeScript
 - **Vite** for build tooling
 - **React Router** for navigation
 - **Recharts** for data visualization
 - **Firebase** for authentication
-- **Tailwind CSS** for styling
 
 ### Backend
 - **Flask** with Python 3.9+
@@ -32,14 +31,9 @@ Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit p
 - **NLTK** for text processing
 - **OpenAI API** for AI summaries
 
-### Infrastructure
-- **Firebase Firestore** for database
-- **Redis** for caching
-- **Reddit API** for data fetching
-
 ## Prerequisites
 
-- Node.js 18+ and npm/pnpm
+- Node.js 18+ and npm
 - Python 3.9+
 - Redis server (optional)
 - **API Keys (contact developer for approval):**
@@ -57,34 +51,19 @@ cd project-sentiscope
 
 ### 2. Environment Configuration
 
-**⚠️ IMPORTANT: API Keys Required**
+**API Keys Required - Contact Developer for Approval**
 
-To run this application locally, you need the following API keys. **Contact the developer for approval and access to these keys:**
-
-- **Firebase API Keys** (Authentication & Database)
-- **Reddit API Credentials** (Data fetching)
-- **OpenAI API Key** (AI summaries)
-
-**Create `.env` file in the `backend` directory:**
-
+Create `.env` file in the `backend` directory:
 ```env
-# Firebase Configuration
 FIREBASE_PRIVATE_KEY_PATH=./privatekey.json
-
-# Reddit API Configuration
 REDDIT_CLIENT_ID=your_reddit_client_id
 REDDIT_SECRET_KEY=your_reddit_secret_key
 USER_AGENT=your_app_name/1.0
-
-# OpenAI Configuration
 OPENAI_API_KEY=your_openai_api_key
-
-# Redis Configuration
 REDIS_URL=redis://localhost:6379
 ```
 
-**Create `.env` file in the `sentiscope-vite-app` directory:**
-
+Create `.env` file in the `sentiscope-vite-app` directory:
 ```env
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
@@ -96,7 +75,7 @@ VITE_FIREBASE_APP_ID=your_app_id
 
 ### 3. Backend Setup
 
-**Windows PowerShell (with execution policy bypass):**
+**Windows PowerShell:**
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
@@ -117,9 +96,8 @@ python app.py
 
 ### 4. Classification Service Setup
 
-**Windows PowerShell (with execution policy bypass):**
+**Windows PowerShell:**
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd classification
 python -m venv venv
 venv\Scripts\activate
@@ -137,7 +115,6 @@ python server.py
 ```
 
 ### 5. Frontend Setup
-
 ```bash
 cd sentiscope-vite-app
 npm install
@@ -146,28 +123,23 @@ npm run dev
 
 ### 6. Running All Services
 
-You need to run **4 services simultaneously**:
+Run **3 services simultaneously**:
 
-**Terminal 1 - Redis (Optional):**
-```bash
-redis-server
-```
-
-**Terminal 2 - Backend (Port 5000):**
+**Terminal 1 - Backend (Port 5000):**
 ```powershell
 cd backend
 venv\Scripts\activate
 python app.py
 ```
 
-**Terminal 3 - Classification Service (Port 5001):**
+**Terminal 2 - Classification Service (Port 5001):**
 ```powershell
 cd classification
 venv\Scripts\activate
 python server.py
 ```
 
-**Terminal 4 - Frontend (Port 5173):**
+**Terminal 3 - Frontend (Port 5173):**
 ```bash
 cd sentiscope-vite-app
 npm run dev
@@ -179,22 +151,20 @@ npm run dev
 - **Backend API**: http://localhost:5000
 - **Classification Service**: http://localhost:5001
 
-### Troubleshooting
+## Troubleshooting
 
 **PowerShell Execution Policy Error:**
-If you get execution policy errors on Windows, run:
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 **Missing Packages:**
-If you get `ModuleNotFoundError`, make sure you're in the virtual environment and run:
 ```bash
 pip install -r requirements.txt
 ```
 
 **CORS Errors:**
-Make sure all services are running on their correct ports:
+Ensure all services are running on correct ports:
 - Backend: 5000
 - Classification: 5001
 - Frontend: 5173
@@ -213,14 +183,6 @@ Create a new user account.
   "email": "john@example.com",
   "password": "securepassword",
   "plan": "free"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "User signed up successfully!",
-  "custom_token": "firebase_custom_token"
 }
 ```
 
@@ -275,9 +237,9 @@ Generate AI summary of sentiment analysis.
 project-sentiscope/
 ├── sentiscope-vite-app/          # React frontend
 │   ├── src/
-│   │   ├── components/           # Reusable components
-│   │   ├── pages/               # Page components
-│   │   ├── assets/              # Static assets
+│   │   ├── components/           # Navbar component + tests
+│   │   ├── pages/               # All page components
+│   │   ├── styles/              # CSS files
 │   │   └── firebase.ts          # Firebase configuration
 │   ├── package.json
 │   └── vite.config.ts
@@ -287,43 +249,31 @@ project-sentiscope/
 │   ├── firestore_config.py      # Database configuration
 │   ├── reddit_config.py         # Reddit API integration
 │   ├── redis_config.py          # Redis configuration
+│   ├── test_routes.py           # API tests
 │   └── requirements.txt
 ├── classification/               # ML service
 │   ├── server.py                # Classification server
 │   ├── sentiscope.pkl           # Trained model
 │   ├── vectoriser.pkl           # Text vectorizer
+│   ├── test_server.py           # ML service tests
 │   └── requirements.txt
 └── README.md
 ```
 
 ## Testing
 
-Run the test suite:
+Basic testing is included to demonstrate quality practices:
 
 ```bash
-# Frontend tests
-cd sentiscope-vite-app
-npm test
-
-# Backend tests
+# Backend API tests
 cd backend
-python -m pytest
+python -m pytest test_routes.py
 
 # Classification service tests
 cd classification
-python -m pytest
+python -m pytest test_server.py
 ```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Reddit API for providing access to community data
-- OpenAI for AI-powered summarization
-- Firebase for authentication and database services
-- The open-source community for various libraries and tools
-
-
-
