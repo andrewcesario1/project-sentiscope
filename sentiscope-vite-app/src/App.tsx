@@ -9,7 +9,7 @@ import SignUpPage from "./pages/SignUpPage";
 import AboutPage from "./pages/AboutPage";
 import SettingsPage from "./pages/SettingsPage";
 
-import "./assets/App.css";
+import "./styles/App.css";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
