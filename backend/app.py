@@ -9,14 +9,12 @@ import os
 def create_app():
     app = Flask(__name__)
     
-    # Initialize rate limiter
     limiter = Limiter(
         key_func=get_remote_address,
         default_limits=["200 per day", "50 per hour"]
     )
     limiter.init_app(app)
     
-    # Security headers
     @app.after_request
     def after_request(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -25,7 +23,6 @@ def create_app():
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
     
-    # Configure CORS with specific origins in production
     if os.getenv('FLASK_ENV') == 'production':
         CORS(app, origins=['https://yourdomain.com'])
     else:

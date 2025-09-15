@@ -33,8 +33,8 @@ firebase-debug.log
 firestore-debug.log
 backend/privatekey.json
 
-# ML Models and Data Files
-*.pkl
+# ML Models and Data Files (keeping .pkl for portfolio)
+# *.pkl  # Commented out - needed for portfolio functionality
 *.joblib
 *.h5
 *.hdf5
@@ -75,3 +75,13 @@ temp/
 .cache/
 .parcel-cache/
 .eslintcache
+
+# Package manager locks (regenerated automatically)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Over-engineered config files (portfolio projects)
+eslint.config.js
+tsconfig.node.json
+.pre-commit-config.yaml

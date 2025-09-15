@@ -14,8 +14,3 @@ class User:
             "plan": self.plan
         })
         return user_ref
-    
-    
-    
-
-

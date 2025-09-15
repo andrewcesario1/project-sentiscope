@@ -34,12 +34,10 @@ def init_routes(app):
             if missing_fields:
                 return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
             
-            # Validate email format
             email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
             if not re.match(email_pattern, new_user["email"]):
                 return jsonify({"error": "Invalid email format"}), 400
             
-            # Validate password strength
             if len(new_user["password"]) < 6:
                 return jsonify({"error": "Password must be at least 6 characters long"}), 400
             
@@ -56,13 +54,11 @@ def init_routes(app):
             
             uid = user.uid
 
-            # Generate a custom token for the user
             try:
                 custom_token = firestore_config.auth.create_custom_token(uid)
             except Exception as e:
                 return jsonify({"error": "Failed to generate authentication token"}), 500
 
-            # Store user data in Firestore
             try:
                 user_ref = firestore_config.db.collection('users').document(str(uid))
                 user_data = {
@@ -94,11 +90,9 @@ def init_routes(app):
             if not keyword or not keyword.strip():
                 return jsonify({"error": "Keyword is required and cannot be empty"}), 400
             
-            # Validate keyword length
             if len(keyword.strip()) < 2:
                 return jsonify({"error": "Keyword must be at least 2 characters long"}), 400
             
-            # Placeholder response for now
             response = {
                 "keyword": keyword.strip(),
                 "sentiment": "Neutral",
@@ -120,7 +114,6 @@ def init_routes(app):
             if not keyword:
                 return jsonify({"error": "A valid keyword is required"}), 400
 
-            # Validate limit parameter
             try:
                 limit = int(limit)
                 if limit < 1 or limit > 1000:
@@ -128,7 +121,6 @@ def init_routes(app):
             except ValueError:
                 return jsonify({"error": "Limit must be a valid number"}), 400
 
-            # Validate time filter
             valid_filters = ['all', 'day', 'week', 'month', 'year']
             if time_filter not in valid_filters:
                 return jsonify({"error": f"Invalid time filter. Must be one of: {', '.join(valid_filters)}"}), 400
@@ -136,7 +128,6 @@ def init_routes(app):
             try:
                 posts_data = reddit_config.search_reddit_posts(keyword, limit, time_filter)
 
-                # Process posts
                 all_posts = {}
                 for post in posts_data:
                     post_data = post["data"]
@@ -195,12 +186,10 @@ def init_routes(app):
             if not posts or not isinstance(posts, list):
                 return jsonify({"error": "Posts array is required"}), 400
 
-            # Validate sentiment data structure
             required_sentiment_fields = ["sentiment", "positive_percentage", "negative_percentage"]
             if not all(field in sentiment_data for field in required_sentiment_fields):
                 return jsonify({"error": "Invalid sentiment data structure"}), 400
 
-            # Build a concise prompt from post snippets
             summary_lines = [
                 f"- \"{p.get('text', '')[:100]}...\""
                 for p in posts[:5] if isinstance(p, dict) and p.get('text')
@@ -209,7 +198,6 @@ def init_routes(app):
             if not summary_lines:
                 return jsonify({"error": "No valid posts found for summary generation"}), 400
                 
-            # Define a dynamic system prompt based on the keyword's topic
             system_prompt = (
                 "You are a professional sentiment analysis summarizer. Your task is to provide a well-structured and insightful summary of sentiment from Reddit posts. "
                 "Format your response using markdown with the following headings: '### Overall Sentiment', '### Key Takeaways', and, if the topic is financial, '### Disclaimer'. "
@@ -218,7 +206,6 @@ def init_routes(app):
                 "For political topics, summarize the prevailing opinions and arguments."
             )
 
-            # Construct a detailed user prompt
             prompt = (
                 f"Analyze the sentiment for the search query: \"{keyword}\".\n"
                 f"The overall sentiment from the posts is {sentiment_data['sentiment']} ({sentiment_data.get('positive_percentage', 0)}% positive, {sentiment_data.get('negative_percentage', 0)}% negative).\n"
@@ -228,7 +215,6 @@ def init_routes(app):
                 "Ensure the 'Key Takeaways' are presented as a bulleted list."
             )
 
-            # Call OpenAI API
             try:
                 ai = client.chat.completions.create(
                     model="gpt-3.5-turbo",

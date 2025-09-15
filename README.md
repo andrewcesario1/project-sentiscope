@@ -12,7 +12,7 @@ Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit p
 - **AI Summaries**: Generate intelligent summaries using OpenAI GPT models
 - **User Authentication**: Secure Firebase-based authentication system
 - **Caching**: Redis-powered caching for improved performance
-- **Responsive Design**: Mobile-first, modern UI built with React and TypeScript
+- **Responsive Design**: Modern UI built with React and TypeScript
 
 ## Tech Stack
 
