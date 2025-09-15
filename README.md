@@ -314,42 +314,6 @@ cd classification
 python -m pytest
 ```
 
-## Deployment
-
-### Frontend (Vercel/Netlify)
-```bash
-cd sentiscope-vite-app
-npm run build
-# Deploy the dist/ folder
-```
-
-### Backend (Render/Heroku)
-```bash
-cd backend
-# Ensure requirements.txt is up to date
-# Configure environment variables
-# Deploy
-```
-
-### Classification Service (Docker)
-```dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 5001
-CMD ["python", "server.py"]
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -360,14 +324,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - OpenAI for AI-powered summarization
 - Firebase for authentication and database services
 - The open-source community for various libraries and tools
-
-## Support
-
-For support, email support@sentiscope.com or create an issue in this repository.
-
----
-
-**Note**: Make sure to set up your Firebase project and obtain the necessary API keys before running the application.
 
 
 
