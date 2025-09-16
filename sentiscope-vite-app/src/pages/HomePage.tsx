@@ -23,6 +23,8 @@ import {
   CartesianGrid,
   Legend
 } from "recharts";
+import { Wordcloud } from '@visx/wordcloud';
+import { Text } from '@visx/text';
 // Simple markdown-to-HTML converter for basic formatting
 const convertMarkdownToHtml = (markdown: string): string => {
   return markdown
@@ -266,11 +268,88 @@ const HomePage: React.FC = () => {
     posts.forEach(p => {
       counts[p.subreddit] = (counts[p.subreddit] || 0) + 1;
     });
+    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#84cc16', '#f97316', '#14b8a6'];
     return Object.entries(counts)
-      .map(([subreddit, count]) => ({ subreddit, count }))
+      .map(([subreddit, count], index) => ({ 
+        subreddit, 
+        count, 
+        fill: colors[index % colors.length] 
+      }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
   }, [posts]);
+
+  const wordCloudData = React.useMemo(() => {
+    if (posts.length === 0) return [];
+    
+    // Comprehensive list of common words to filter out
+    const stopWords = new Set([
+      // Articles, conjunctions, prepositions
+      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+      'from', 'up', 'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
+      'between', 'among', 'under', 'over', 'out', 'off', 'down', 'within', 'without', 'against',
+      
+      // Verbs
+      'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+      'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'get', 'got', 'getting',
+      'go', 'going', 'went', 'gone', 'come', 'came', 'coming', 'see', 'saw', 'seen', 'seeing',
+      'know', 'knew', 'known', 'think', 'thought', 'thinking', 'want', 'wanted', 'wanting',
+      'make', 'made', 'making', 'take', 'took', 'taken', 'taking', 'give', 'gave', 'given', 'giving',
+      
+      // Pronouns
+      'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
+      'my', 'your', 'his', 'her', 'its', 'our', 'their', 'myself', 'yourself', 'himself',
+      'herself', 'itself', 'ourselves', 'yourselves', 'themselves', 'this', 'that', 'these', 'those',
+      
+      // Common adverbs and adjectives
+      'not', 'no', 'yes', 'so', 'just', 'only', 'also', 'well', 'still', 'even', 'never',
+      'always', 'often', 'sometimes', 'usually', 'really', 'very', 'quite', 'too', 'much',
+      'many', 'more', 'most', 'less', 'least', 'some', 'any', 'all', 'every', 'each',
+      'few', 'several', 'both', 'either', 'neither', 'other', 'another', 'such', 'same',
+      
+      // Time and place
+      'now', 'then', 'here', 'there', 'where', 'when', 'how', 'why', 'today', 'yesterday',
+      'tomorrow', 'ago', 'since', 'until', 'while', 'once', 'twice', 'again', 'back',
+      
+      // Question words and others
+      'what', 'who', 'which', 'whose', 'whom', 'whatever', 'whoever', 'whichever',
+      
+      // Numbers and quantifiers
+      'one', 'two', 'three', 'four', 'five', 'first', 'second', 'third', 'last', 'next',
+      'previous', 'final', 'initial', 'original', 'new', 'old', 'young', 'long', 'short',
+      'high', 'low', 'big', 'small', 'large', 'little', 'great', 'good', 'bad', 'best',
+      'worst', 'better', 'worse', 'right', 'wrong', 'true', 'false', 'sure', 'certain',
+      
+      // Common Reddit/internet words
+      'like', 'said', 'say', 'says', 'saying', 'tell', 'told', 'telling', 'ask', 'asked',
+      'asking', 'look', 'looking', 'looks', 'looked', 'find', 'found', 'finding', 'try',
+      'trying', 'tried', 'use', 'used', 'using', 'work', 'working', 'worked', 'need',
+      'needed', 'needing', 'put', 'putting', 'call', 'called', 'calling', 'than', 'then',
+      'way', 'ways', 'thing', 'things', 'stuff', 'people', 'person', 'guy', 'guys',
+      'man', 'men', 'woman', 'women', 'time', 'times', 'day', 'days', 'year', 'years',
+      'week', 'weeks', 'month', 'months', 'hour', 'hours', 'minute', 'minutes'
+    ]);
+
+    const wordCounts: Record<string, number> = {};
+    
+    posts.forEach(post => {
+      const text = `${post.title} ${post.text}`.toLowerCase();
+      const words = text.match(/\b[a-zA-Z]{3,}\b/g) || [];
+      
+      words.forEach(word => {
+        if (!stopWords.has(word) && word.length > 2) {
+          wordCounts[word] = (wordCounts[word] || 0) + 1;
+        }
+      });
+    });
+
+    // Sort by text to ensure consistent ordering
+    return Object.entries(wordCounts)
+      .filter(([_, count]) => count > 1) // Only words that appear more than once
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) // Sort by count, then alphabetically for stability
+      .slice(0, 50) // Top 50 words
+      .map(([text, value]) => ({ text, value }));
+  }, [posts.length, posts.map(p => `${p.title}${p.text}`).join('')]);
 
   const formatDate = (timestamp: number) =>
     new Date(timestamp * 1000).toLocaleString();
@@ -451,7 +530,7 @@ const HomePage: React.FC = () => {
                     <div className="hp-graphs">
                         <div className="hp-chart-container">
                             <h4>Positive Sentiment</h4>
-                            <ResponsiveContainer width="100%" height={250}>
+                            <ResponsiveContainer width="100%" height={340}>
                             <PieChart>
                                 <Pie
                                 data={[
@@ -492,17 +571,11 @@ const HomePage: React.FC = () => {
                         </div>
                         <div className="hp-chart-container">
                             <h4>Top Subreddits</h4>
-                            <ResponsiveContainer width="100%" height={320}>
+                            <ResponsiveContainer width="100%" height={340}>
                             <BarChart
                                 data={barData}
-                                margin={{ top: 20, right: 20, left: 0, bottom: 120 }}
+                                margin={{ top: 10, right: 20, left: 0, bottom: 80 }}
                             >
-                                <defs>
-                                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={getComputedStyle(document.documentElement).getPropertyValue('--primary-color-start')} stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor={getComputedStyle(document.documentElement).getPropertyValue('--primary-color-end')} stopOpacity={0.1}/>
-                                    </linearGradient>
-                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                                 <XAxis
                                 dataKey="subreddit"
@@ -520,10 +593,65 @@ const HomePage: React.FC = () => {
                                     }}
                                 />
                                 <Legend wrapperStyle={{ color: 'var(--text-color)' }}/>
-                                <Bar dataKey="count" name="Posts" fill="url(#colorUv)" />
+                                <Bar dataKey="count" name="Posts">
+                                    {barData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                             </ResponsiveContainer>
                         </div>
+                        {wordCloudData.length > 0 && (
+                        <div className="hp-chart-container hp-wordcloud-container">
+                            <h4>Common Words</h4>
+                            <div style={{ width: '100%', height: '320px' }}>
+                                <svg width="100%" height="100%">
+                                    <Wordcloud
+                                        key={`wordcloud-${posts.length}-${wordCloudData.length}`}
+                                        words={wordCloudData}
+                                        width={580}
+                                        height={320}
+                                        fontSize={(datum) => {
+                                            const maxValue = Math.max(...wordCloudData.map(w => w.value));
+                                            const minValue = Math.min(...wordCloudData.map(w => w.value));
+                                            const scale = (datum.value - minValue) / (maxValue - minValue);
+                                            return 12 + scale * 48; // Range from 12 to 60
+                                        }}
+                                        rotate={(datum) => {
+                                            // Create deterministic rotation based on word text
+                                            let hash = 0;
+                                            for (let i = 0; i < datum.text.length; i++) {
+                                                const char = datum.text.charCodeAt(i);
+                                                hash = ((hash << 5) - hash) + char;
+                                                hash = hash & hash; // Convert to 32-bit integer
+                                            }
+                                            return ((hash % 120) - 60); // Range from -60 to 60 degrees
+                                        }}
+                                        padding={2}
+                                    >
+                                        {(cloudWords) =>
+                                            cloudWords.map((w, i) => {
+                                                const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+                                                return (
+                                                    <Text
+                                                        key={w.text}
+                                                        fill={colors[i % colors.length]}
+                                                        textAnchor="middle"
+                                                        transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
+                                                        fontSize={w.size}
+                                                        fontFamily="Inter, system-ui, sans-serif"
+                                                        fontWeight={600}
+                                                    >
+                                                        {w.text}
+                                                    </Text>
+                                                );
+                                            })
+                                        }
+                                    </Wordcloud>
+                                </svg>
+                            </div>
+                        </div>
+                        )}
                     </div>
                     )}
                 </div> 
