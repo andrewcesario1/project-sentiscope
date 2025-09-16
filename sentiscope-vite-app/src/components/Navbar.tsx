@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { signInWithEmailAndPassword, signOut, User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import "../styles/Navbar.css";
 import Logo from "/Logo.png";
 
 interface NavbarProps {
   user: User | null;
+}
+
+interface UserData {
+  name: string;
+  email: string;
+  plan: string;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ user }) => {
@@ -15,6 +22,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   const [error, setError] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const navigate = useNavigate();
 
   const authDropdownRef = useRef<HTMLDivElement>(null);
@@ -29,8 +37,41 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   useEffect(() => {
     if (user) {
       resetCredentials();
+      fetchUserData();
+    } else {
+      setUserData(null);
     }
   }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data() as any;
+        setUserData({ 
+          name: data.name || '', 
+          email: user.email || data.email || '', 
+          plan: data.plan || 'free' 
+        });
+      } else {
+        setUserData({ 
+          name: '', 
+          email: user.email || '', 
+          plan: 'free' 
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setUserData({ 
+        name: '', 
+        email: user.email || '', 
+        plan: 'free' 
+      });
+    }
+  };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (authDropdownRef.current && !authDropdownRef.current.contains(event.target as Node)) {
@@ -113,8 +154,16 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
 
         {user ? (
           <div className={`profile-dropdown ${profileDropdown ? 'open' : ''}`} ref={profileDropdownRef}>
-            <button onClick={() => setProfileDropdown(!profileDropdown)} className="navbar-link">
-              Profile ▼
+            <button onClick={() => setProfileDropdown(!profileDropdown)} className="profile-button">
+              <div className="profile-avatar">
+                {userData?.name ? userData.name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
+              </div>
+              <span className="profile-name">
+                {userData?.name || (user.email ? user.email.split('@')[0] : 'Profile')}
+              </span>
+              <svg className={`profile-chevron ${profileDropdown ? 'rotated' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
             </button>
             {profileDropdown && (
               <div className="dropdown-menu">
