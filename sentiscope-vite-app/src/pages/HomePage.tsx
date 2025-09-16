@@ -23,6 +23,24 @@ import {
   CartesianGrid,
   Legend
 } from "recharts";
+// Simple markdown-to-HTML converter for basic formatting
+const convertMarkdownToHtml = (markdown: string): string => {
+  return markdown
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+    .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>') // H3
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>') // H2
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>') // H1
+    .replace(/^• (.*$)/gim, '<li>$1</li>') // List items
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>') // Wrap list items
+    .replace(/\n\n/g, '</p><p>') // Paragraphs
+    .replace(/^(.+)$/gm, '<p>$1</p>') // Wrap remaining lines in paragraphs
+    .replace(/<p><h/g, '<h') // Fix headers in paragraphs
+    .replace(/<\/h([1-6])><\/p>/g, '</h$1>') // Fix headers in paragraphs
+    .replace(/<p><ul>/g, '<ul>') // Fix lists in paragraphs
+    .replace(/<\/ul><\/p>/g, '</ul>') // Fix lists in paragraphs
+    .replace(/<p><\/p>/g, ''); // Remove empty paragraphs
+};
 import "../styles/HomePage.css";
 
 const API_BASE = "http://localhost:5000";
@@ -60,6 +78,7 @@ const HomePage: React.FC = () => {
   const [sentiment, setSentiment] = useState<SentimentResponse | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("sentiment");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
@@ -67,6 +86,33 @@ const HomePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [user] = useAuthState(auth);
+
+  // Async summary generation function
+  const generateSummaryAsync = async (keyword: string, sentimentData: SentimentResponse, posts: Post[]) => {
+    setSummaryLoading(true);
+    try {
+      const sRes = await fetch(`${API_BASE}/generateSummary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keyword: keyword,
+          sentiment: sentimentData,
+          posts: posts,
+        }),
+      });
+      
+      if (sRes.ok) {
+        const sData: SummaryResponse = await sRes.json();
+        setSummary(sData);
+      } else {
+        console.warn("Summary generation failed, but not blocking main results");
+      }
+    } catch (error) {
+      console.warn("Summary generation error:", error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   useEffect(() => {
     const trackVisit = async () => {
@@ -106,8 +152,10 @@ const HomePage: React.FC = () => {
     setPosts([]);
     setSentiment(null);
     setSummary(null);
+    setSummaryLoading(false);
     setLoading(true);
     setCurrentPage(1);
+    setActiveTab("sentiment");
   
     try {
       const limit = 100;
@@ -177,30 +225,16 @@ const HomePage: React.FC = () => {
         mdlData = await mdlRes.json();
       }
   
-      const sRes = await fetch(`${API_BASE}/generateSummary`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          keyword: query,
-          sentiment: mdlData,
-          posts: allPosts,
-        }),
-      });
-      
-      if (!sRes.ok) {
-        const errorData = await sRes.json().catch(() => ({}));
-        throw new Error(errorData.error || "Summary generation failed");
-      }
-      
-      const sData: SummaryResponse = await sRes.json();
   
       setSentiment(mdlData);
       setPosts(allPosts);
-      setSummary(sData);
 
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+
+      // Generate summary asynchronously without blocking results
+      generateSummaryAsync(query, mdlData, allPosts);
   
       try {
         const userRef = doc(db, "users", user.uid);
@@ -388,10 +422,28 @@ const HomePage: React.FC = () => {
                     </div>
                     )}
 
-                    {activeTab === "summary" && summary && (
+                    {activeTab === "summary" && (
                     <div className="hp-summary-container">
                         <h3>AI Summary</h3>
-                        <p>{summary.summary}</p>
+                        {summaryLoading ? (
+                            <div className="hp-summary-loading">
+                                <div className="hp-loading-spinner"></div>
+                                <p>Generating AI insights from Reddit posts...</p>
+                            </div>
+                        ) : summary ? (
+                            <div 
+                                className="hp-summary-content"
+                                dangerouslySetInnerHTML={{
+                                    __html: typeof summary.summary === 'string' 
+                                        ? convertMarkdownToHtml(summary.summary)
+                                        : '<p>Unable to load summary</p>'
+                                }}
+                            />
+                        ) : (
+                            <div className="hp-summary-placeholder">
+                                <p>No summary available. Try running an analysis first.</p>
+                            </div>
+                        )}
                     </div>
                     )}
 
@@ -440,10 +492,10 @@ const HomePage: React.FC = () => {
                         </div>
                         <div className="hp-chart-container">
                             <h4>Top Subreddits</h4>
-                            <ResponsiveContainer width="100%" height={250}>
+                            <ResponsiveContainer width="100%" height={320}>
                             <BarChart
                                 data={barData}
-                                margin={{ top: 20, right: 20, left: 0, bottom: 100 }}
+                                margin={{ top: 20, right: 20, left: 0, bottom: 120 }}
                             >
                                 <defs>
                                     <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">

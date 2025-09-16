@@ -1,8 +1,14 @@
 # Sentiscope - AI-Powered Sentiment Analysis Platform
 
+## 🎥 Demo
+
+
+
+---
+
 Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit posts to provide real-time sentiment insights, data visualization, and AI-generated summaries. Built with React, Flask, and machine learning models.
 
-**Note**: Hosting was discontinued due to cost. Project can be run locally with a .env file. **API keys are required and must be requested from the developer for approval.**
+**Note**: Hosting was discontinued due to cost. Project can be run locally with a .env file. **API keys are required and must be requested from the developer.**
 
 ## Features
 
@@ -36,7 +42,7 @@ Sentiscope is a comprehensive sentiment analysis platform that analyzes Reddit p
 - Node.js 18+ and npm
 - Python 3.9+
 - Redis server (optional)
-- **API Keys (contact developer for approval):**
+- **API Keys (contact developer):**
   - Firebase project with Firestore enabled
   - Reddit API credentials
   - OpenAI API key
@@ -51,7 +57,7 @@ cd project-sentiscope
 
 ### 2. Environment Configuration
 
-**API Keys Required - Contact Developer for Approval**
+**API Keys Required - Contact Developer**
 
 Create `.env` file in the `backend` directory:
 ```env

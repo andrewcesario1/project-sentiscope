@@ -190,29 +190,51 @@ def init_routes(app):
             if not all(field in sentiment_data for field in required_sentiment_fields):
                 return jsonify({"error": "Invalid sentiment data structure"}), 400
 
-            summary_lines = [
-                f"- \"{p.get('text', '')[:100]}...\""
-                for p in posts[:5] if isinstance(p, dict) and p.get('text')
-            ]
+            post_summaries = []
+            for i, p in enumerate(posts[:6]):
+                if isinstance(p, dict):
+                    title = p.get('title', '')
+                    text = p.get('text', '')
+                    score = p.get('score', 0)
+                    subreddit = p.get('subreddit', '')
+                    
+                    content = f"{title}. {text}".strip()
+                    if len(content) > 150:
+                        content = content[:150] + "..."
+                    
+                    if content and len(content.strip('. ')) > 10:
+                        post_summaries.append(f"r/{subreddit}: {content} ({score} upvotes)")
+                    elif title.strip():
+                        post_summaries.append(f"r/{subreddit}: {title} ({score} upvotes)")
             
-            if not summary_lines:
+            if not post_summaries:
                 return jsonify({"error": "No valid posts found for summary generation"}), 400
                 
             system_prompt = (
-                "You are a professional sentiment analysis summarizer. Your task is to provide a well-structured and insightful summary of sentiment from Reddit posts. "
-                "Format your response using markdown with the following headings: '### Overall Sentiment', '### Key Takeaways', and, if the topic is financial, '### Disclaimer'. "
-                "Under 'Key Takeaways', use a bulleted list to highlight the most important points. "
-                "You must adapt your response to the topic of the query. For financial topics, your summary should discuss whether the community seems **bullish** or **bearish** and include a disclaimer. "
-                "For political topics, summarize the prevailing opinions and arguments."
+                "You are an expert sentiment analyst specializing in Reddit community analysis. "
+                "Provide comprehensive, insightful analysis that explains WHY the sentiment exists by examining actual post content and context. "
+                "Use specific examples from posts to support your analysis. Create a well-structured, detailed summary with multiple sections. "
+                "For financial topics, discuss whether the community is bullish/bearish and explain the reasoning."
             )
 
             prompt = (
-                f"Analyze the sentiment for the search query: \"{keyword}\".\n"
-                f"The overall sentiment from the posts is {sentiment_data['sentiment']} ({sentiment_data.get('positive_percentage', 0)}% positive, {sentiment_data.get('negative_percentage', 0)}% negative).\n"
-                "Here are some of the posts:\n"
-                + "\n".join(summary_lines) +
-                "\n\nBased on this information, provide a structured summary with the specified headings. "
-                "Ensure the 'Key Takeaways' are presented as a bulleted list."
+                f"Analyze the sentiment for '{keyword}' based on Reddit community discussions.\n\n"
+                f"SENTIMENT DATA:\n"
+                f"Overall: {sentiment_data['sentiment']} ({sentiment_data.get('positive_percentage', 0)}% positive, {sentiment_data.get('negative_percentage', 0)}% negative)\n\n"
+                f"SAMPLE POSTS:\n" + "\n".join(post_summaries) + "\n\n"
+                f"Provide a comprehensive analysis with the following structure:\n\n"
+                f"### 📊 Sentiment Overview\n"
+                f"[Detailed explanation of why the sentiment is {sentiment_data['sentiment']} based on the post content and community discussions]\n\n"
+                f"### 🔍 Key Themes & Insights\n"
+                f"• **[Theme 1]:** [Detailed insight with specific examples from posts]\n"
+                f"• **[Theme 2]:** [Another insight with context and evidence]\n"
+                f"• **[Theme 3]:** [Third insight explaining sentiment drivers]\n"
+                f"• **[Theme 4]:** [Additional insight about implications or trends]\n\n"
+                f"### 💡 Community Perspective\n"
+                f"[Explain what this sentiment tells us about how the community views this topic, including any notable patterns, concerns, or excitement]\n\n"
+                f"### 🎯 What This Means\n"
+                f"[Practical interpretation of the sentiment - what should someone understand about the community's current stance on this topic]"
+                + (f"\n\n### ⚠️ Disclaimer\n[Standard investment disclaimer noting this is for informational purposes only]" if any(word in keyword.lower() for word in ['stock', 'crypto', 'invest', 'trade', '$', 'nvda', 'tesla', 'bitcoin', 'eth', 'amd', 'msft', 'aapl']) else "")
             )
 
             try:
@@ -222,8 +244,8 @@ def init_routes(app):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=1000,
-                    temperature=0.5
+                    max_tokens=700,
+                    temperature=0.4
                 )
                 summary_text = ai.choices[0].message.content.strip()
             except Exception as e:
