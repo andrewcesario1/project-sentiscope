@@ -327,7 +327,11 @@ const HomePage: React.FC = () => {
       'needed', 'needing', 'put', 'putting', 'call', 'called', 'calling', 'than', 'then',
       'way', 'ways', 'thing', 'things', 'stuff', 'people', 'person', 'guy', 'guys',
       'man', 'men', 'woman', 'women', 'time', 'times', 'day', 'days', 'year', 'years',
-      'week', 'weeks', 'month', 'months', 'hour', 'hours', 'minute', 'minutes'
+      'week', 'weeks', 'month', 'months', 'hour', 'hours', 'minute', 'minutes',
+      
+      // URL components and technical terms
+      'https', 'http', 'www', 'com', 'org', 'net', 'edu', 'gov', 'html', 'php', 'asp',
+      'url', 'link', 'website', 'site', 'page', 'click', 'redirect', 'domain'
     ]);
 
     const wordCounts: Record<string, number> = {};

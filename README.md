@@ -280,6 +280,23 @@ cd classification
 python -m pytest test_server.py
 ```
 
+## Known Limitations & Room for Improvement
+
+### Data Limitations
+- **Reddit API Rate Limiting**: Due to Reddit's API constraints, the platform is limited to fetching only **100 posts per query**. This small data sample size can significantly impact sentiment accuracy and may not represent the true sentiment distribution of the broader Reddit community on a given topic.
+- **Subreddit Coverage**: Limited to publicly accessible subreddits, missing private or restricted community discussions.
+
+### Technical Improvements
+- **Sample Size**: Increasing the data sample beyond 100 posts would provide more statistically significant sentiment analysis.
+- **Real-time Updates**: Currently requires manual refresh for new data; could benefit from real-time streaming.
+- **Advanced ML Models**: Integration of more sophisticated NLP models (BERT, GPT-based classifiers) could improve sentiment accuracy.
+- **Multi-platform Analysis**: Expanding beyond Reddit to include Twitter, news articles, or other social platforms.
+
+### Performance Optimizations
+- **Caching Strategy**: Enhanced caching for frequently searched terms and historical data.
+- **Batch Processing**: Implementing batch processing for large-scale sentiment analysis.
+- **API Rate Management**: Better handling of API rate limits with queuing and retry mechanisms.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
