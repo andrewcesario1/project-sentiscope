@@ -168,7 +168,7 @@ def init_routes(app):
         
     
     @app.route("/generateSummary", methods=["POST"])
-    @limiter.limit("5 per minute")
+    @limiter.limit("15 per minute")
     def generateSummary():
         try:
             data = request.get_json()
