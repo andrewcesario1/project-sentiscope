@@ -1,6 +1,6 @@
 # Sentiscope - AI-Powered Sentiment Analysis Platform
 
-## 🎥 Demo
+## Demo
 
 
 
