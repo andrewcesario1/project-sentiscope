@@ -288,7 +288,6 @@ python -m pytest test_server.py
 
 ### Technical Improvements
 - **Sample Size**: Increasing the data sample beyond 100 posts would provide more statistically significant sentiment analysis.
-- **Real-time Updates**: Currently requires manual refresh for new data; could benefit from real-time streaming.
 - **Advanced ML Models**: Integration of more sophisticated NLP models (BERT, GPT-based classifiers) could improve sentiment accuracy.
 - **Multi-platform Analysis**: Expanding beyond Reddit to include Twitter, news articles, or other social platforms.
 
