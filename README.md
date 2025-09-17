@@ -1,4 +1,4 @@
-# Sentiscope - AI-Powered Sentiment Analysis Platform
+# Sentiscope - ML-Powered Sentiment Analysis Platform
 
 ## Demo
 
